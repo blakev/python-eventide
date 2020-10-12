@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "python-eventide"
+version = "0.0.1"
+description = "Python client tooling for the Eventide project."
+authors = ["Blake VandeMerwe <blakev@null.net>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+aiopg = "^1.0.0"
+toolz = "^0.11.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.1.1"
+pytest-cov = "^2.10.1"
+pytest-asyncio = "^0.14.0"
+invoke = "^1.4.1"
+yapf = "^0.30.0"
+isort = "^5.6.3"
+autoflake = "^1.4"
+pyflakes = "^2.2.0"
+codespell = "^1.17.1"
+pytest-xdist = "^2.1.0"
+twine = "^3.2.0"
+tox = "^3.20.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
