@@ -6,7 +6,6 @@
 #   LiveViewTech
 # <<
 
-
 from eventide.database import Database
 
 

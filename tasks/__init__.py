@@ -6,6 +6,8 @@
 #   LiveViewTech
 # <<
 
+from invoke import Collection
 
-class Stream:
-    pass
+from tasks import build
+
+ns = Collection(build=build,)
