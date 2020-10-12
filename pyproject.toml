@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "python-eventide"
+name = "eventide"
 version = "0.0.1"
 description = "Python client tooling for the Eventide project."
 authors = ["Blake VandeMerwe <blakev@null.net>"]

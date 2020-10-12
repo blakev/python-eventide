@@ -47,12 +47,23 @@ $ docker run --name message-db -p 5432:5432 -d ethangarofolo/message-db
 
 Current virtual environment,
 ```text
-$ inv build.test
+(python-eventide) $ inv build.test
 ```
 
 All supported versions,
 ```text
-$ inv build.tox
+(python-eventide) $ inv build.tox
+
+✔ OK py38 in 8.502 seconds
+✔ OK py39 in 16.32 seconds
+✔ OK py37 in 17.334 seconds
+✔ OK pypy3 in 41.174 seconds
+___________________________________ summary ____________________________________
+  py37: commands succeeded
+  py38: commands succeeded
+  py39: commands succeeded
+  pypy3: commands succeeded
+congratulations :)
 ```
 
 ## Benchmarks
