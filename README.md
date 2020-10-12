@@ -3,6 +3,37 @@ Unofficial Python client and tooling for the Eventide project (https://eventide-
 
 Sponsored by [Liveview Technologies](https://lvt.co/).
 
+```python
+import asyncio
+
+from eventide import Eventide, Database
+from eventide.types import Loop
+
+
+async def main(loop: Loop):
+    db = Database.from_kwargs(
+        host='localhost',
+        user='message_store',
+        password='',
+        dbname='message_store',
+        loop=loop,
+    )
+    app = Eventide(db)
+
+    print(await app.get_version())
+    print(await app.write_raw_message('accounts', 'checking', {'balance': 5.00}))
+    await app.close()
+
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main(loop))
+loop.close()
+```
+*Output*:
+```text
+(1, 1, 6)
+Message(stream='accounts', type='checking', data={'balance': 5.0}, id=UUID('505395b6-670d-4256-b89d-678b649eeeb1'), metadata=None, position=1623)
+```
 
 ## Setup
 
@@ -12,9 +43,21 @@ The database
 $ docker run --name message-db -p 5432:5432 -d ethangarofolo/message-db
 ```
 
+## Testing
+
+Current virtual environment,
+```text
+$ inv build.test
+```
+
+All supported versions,
+```text
+$ inv build.tox
+```
+
 ## Benchmarks
 
-## Testing
+*TBD*
 
 ## License
 
