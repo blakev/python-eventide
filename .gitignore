@@ -1,3 +1,20 @@
+.idea/
+scratch.py
+skratch.py
+derp_*.py
+.pypy_cache/
+artifacts/
+!scripts/output/.gitkeep
+scripts/output/*
+.random-seed
+.history
+*.pem
+*.key
+requirements.txt
+config.toml
+aws.json
+poetry.lock
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
