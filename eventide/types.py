@@ -6,8 +6,15 @@
 #   LiveViewTech
 # <<
 
-from typing import Dict, List, Union
+from asyncio import AbstractEventLoop
+from typing import (
+    Dict,
+    List,
+    Union,
+    Optional,
+)
 
 JSONFlatTypes = Union[str, int, float, bool, None]
 JSONTypes = Union[JSONFlatTypes, List[JSONFlatTypes], Dict[str, JSONFlatTypes]]
 JSON = Dict[str, JSONTypes]
+Loop = Optional[AbstractEventLoop]
