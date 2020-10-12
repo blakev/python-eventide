@@ -1,4 +1,5 @@
 .idea/
+.idea/*
 scratch.py
 skratch.py
 derp_*.py
