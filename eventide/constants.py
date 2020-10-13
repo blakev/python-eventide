@@ -11,3 +11,4 @@ import uuid
 
 DEFAULT_GEN_UUID = uuid.uuid4
 DEFAULT_JSON_DUMPS = json.dumps
+DEFAULT_JSON_LOADS = json.loads

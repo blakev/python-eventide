@@ -43,7 +43,7 @@ class Database:
         self.__pool: Optional[Pool] = None
 
         self.loop = loop or asyncio.get_event_loop()
-        self.logger = getLogger(f'{__name__}.Database')
+        self.logger = getLogger(f'{__name__}.{self.__class__.__name__}')
 
     def __del__(self):
         # cleanup all the dangling/open connections
