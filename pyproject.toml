@@ -10,6 +10,7 @@ python = "^3.7"
 aiopg = "^1.0.0"
 toolz = "^0.11.1"
 omegaconf = "^2.0.2"
+pendulum = "^2.1.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1.1"
