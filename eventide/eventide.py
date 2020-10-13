@@ -13,7 +13,6 @@ from typing import Optional
 from omegaconf import DictConfig
 
 from eventide.types import Loop
-from eventide.message import Message
 from eventide.message_store import MessageStore
 
 
@@ -21,24 +20,23 @@ class Eventide:
 
     def __init__(
         self,
-        database: Optional[MessageStore] = None,
+        message_store: Optional[MessageStore] = None,
         config: Optional[DictConfig] = None,
         loop: Loop = None,
     ):
-        self._db = database
+        self._mdb = message_store
         self._config = config
         self.loop = loop or asyncio.get_event_loop()
         self.logger = getLogger(f'{__name__}.Eventide')
 
     @property
-    def database(self) -> MessageStore:
-        if self._db is None:
-            self._db = MessageStore(**self._config.database or {})
-        return self._db
+    def message_store(self) -> MessageStore:
+        if self._mdb is None:
+            self._mdb = MessageStore(**self._config.message_store or {})
+        return self._mdb
 
-    db = mdb = message_store = database  # aliases
+    mdb = message_store
 
     async def close(self) -> None:
-        if self._db:
-            await self._db.close()
-
+        if self._mdb:
+            await self._mdb.close()

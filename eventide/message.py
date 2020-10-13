@@ -17,7 +17,8 @@ from pendulum import DateTime
 
 from eventide.types import JSON
 from eventide.utils import dataclass_slots
-from eventide.constants import DEFAULT_GEN_UUID, DEFAULT_JSON_LOADS as jloads
+from eventide.constants import DEFAULT_GEN_UUID
+from eventide.constants import DEFAULT_JSON_LOADS as jloads
 
 __all__ = [
     'Stream',
@@ -26,6 +27,7 @@ __all__ = [
 
 
 class Stream:
+
     def __init__(self, name: str):
         self._name = name
 
@@ -60,7 +62,7 @@ class Message:
             row.type,
             jloads(row.data),
             UUID(row.id),
-            jloads(row.metdata) if row.metadata else {},
+            jloads(row.metadata) if row.metadata else {},
             row.position,
             pendulum.instance(row.time, 'UTC'),
         )

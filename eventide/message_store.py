@@ -6,9 +6,15 @@
 #   LiveViewTech
 # <<
 
-from hashlib import md5
 from uuid import UUID
-from typing import Optional, Tuple, AsyncIterable, Dict, Set
+from hashlib import md5
+from typing import (
+    Set,
+    Dict,
+    Tuple,
+    Optional,
+    AsyncIterable,
+)
 
 from toolz.dicttoolz import keymap
 
