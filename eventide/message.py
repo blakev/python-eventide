@@ -15,6 +15,19 @@ from eventide.types import JSON
 from eventide.utils import dataclass_slots
 from eventide.constants import DEFAULT_GEN_UUID
 
+__all__ = [
+    'Stream',
+    'Message',
+]
+
+
+class Stream:
+    def __init__(self, name: str):
+        self._name = name
+
+    def __str__(self) -> str:
+        return self._name
+
 
 @dataclass_slots
 @dataclass(frozen=True, repr=True)
@@ -22,7 +35,7 @@ from eventide.constants import DEFAULT_GEN_UUID
 class Message:
     """Base Message Implementation"""
 
-    stream: str
+    stream: Stream
     type: str
     data: JSON
     id: Optional[UUID] = field(default_factory=DEFAULT_GEN_UUID)
