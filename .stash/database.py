@@ -78,7 +78,8 @@ class Database:
     def connected(self) -> bool:
         try:
             connected = self.__pool and not self.__pool.closed
-        except Exception:
+        except Exception as e:
+            self.logger.error(e)
             connected = False
         return connected
 

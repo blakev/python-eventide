@@ -6,101 +6,137 @@
 #   LiveViewTech
 # <<
 
-from uuid import UUID
-from datetime import datetime
+from uuid import UUID, uuid4
+from dataclasses import dataclass, field, asdict
 from functools import total_ordering
-from dataclasses import field, dataclass
-from typing import Any, Optional
+from typing import Dict, Optional, List
 
-import pendulum
-from pendulum import DateTime
-
-from eventide.types import JSON
-from eventide.utils import dataclass_slots
-from eventide.constants import DEFAULT_GEN_UUID
-from eventide.constants import DEFAULT_JSON_LOADS as jloads
-
-__all__ = [
-    'Stream',
-    'Message',
-]
+from eventide._types import JSON
+from eventide.utils import jdumps
 
 
-class Stream:
+@dataclass(frozen=False, repr=True)
+class Metadata:
+    """A message's metadata object contains information about the stream where the
+    message resides, the previous message in a series of messages that make up a
+    messaging workflow, the originating process to which the message belongs, as well
+    as other data that are pertinent to understanding the provenance and disposition.
 
-    def __init__(self, name: str):
-        self._name = name
+    Message metadata is data about messaging machinery, like message schema version,
+    source stream, positions, provenance, reply address, and the like.
+    """
+    # yapf: disable
+    stream_name:                        Optional[str] = field(default=None)
+    position:                           Optional[int] = field(default=None)
+    global_position:                    Optional[int] = field(default=None)
+    causation_message_stream_name:      Optional[str] = field(default=None)
+    causation_message_position:         Optional[int] = field(default=None)
+    causation_message_global_position:  Optional[int] = field(default=None)
+    correlation_stream_name:            Optional[str] = field(default=None)
+    reply_stream_name:                  Optional[str] = field(default=None)
+    schema_version:                     Optional[str] = field(default=None)
+    time:                               Optional[float] = field(default=None)
+    # yapf: enable
 
-    def __str__(self) -> str:
-        return self._name
+    @property
+    def identifier(self) -> str:
+        return '%s/%d' % (self.stream_name, self.position)
+
+    @property
+    def causation_identifier(self) -> str:
+        return '%s/%d' % (
+            self.causation_message_stream_name, self.causation_message_position
+        )
+
+    @property
+    def replies(self) -> bool:
+        return bool(self.reply_stream_name)
+
+    def do_not_reply(self) -> 'Metadata':
+        self.reply_stream_name = None
+        return self
+
+    def follow(self, other: 'Metadata') -> 'Metadata':
+        self.causation_message_stream_name = other.stream_name
+        self.causation_message_position = other.position
+        self.causation_message_global_position = other.global_position
+        self.correlation_stream_name = other.correlation_stream_name
+        self.reply_stream_name = other.reply_stream_name
+        return self
+
+    def follows(self, other: 'Metadata') -> bool:
+        return self.causation_message_stream_name == other.stream_name \
+            and self.causation_message_position == other.position \
+            and self.causation_message_global_position == other.global_position \
+            and self.correlation_stream_name == other.correlation_stream_name \
+            and self.reply_stream_name == other.reply_stream_name
+
+    def correlates(self, stream_name: str) -> bool:
+        return self.correlation_stream_name == stream_name
 
 
-@dataclass_slots
+@dataclass(frozen=False, repr=False, init=True, eq=False)
+class Message:
+
+    id: UUID = field(init=False)
+    metadata: Metadata = field(init=False)
+
+    def __post_init__(self):
+        self.id = uuid4()
+        self.metadata = Metadata()
+
+    def __eq__(self, other: 'Message') -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+        attrs = self.attributes()
+        for k, v in other.attributes().items():
+            if attrs.get(k, not v) != v:
+                return False
+        return True
+
+    @property
+    def type(self) -> str:
+        return self.__class__.__name__
+
+    def attributes(self) -> Dict:
+        return asdict(self)
+
+    def attribute_names(self) -> List[str]:
+        return list(self.attributes().keys())
+
+    def follow(self, other: 'Message') -> 'Message':
+        self.metadata.follow(other.metadata)
+        return self
+
+    def follows(self, other: 'Message') -> bool:
+        return self.metadata.follows(other.metadata)
+
+
 @dataclass(frozen=True, repr=True)
 @total_ordering
-class Message:
-    """Base Message Implementation"""
+class MessageData:
+    """MessageData is the raw, low-level storage representation of a message."""
 
-    stream: str
+    id: UUID
     type: str
     data: JSON
-    id: Optional[UUID] = field(default_factory=DEFAULT_GEN_UUID)
-    metadata: Optional[JSON] = field(default_factory=dict)
-    position: Optional[int] = field(default=0)
-    time: Optional[DateTime] = field(default=None)
+    metadata: Metadata
+    stream_name: str
+    position: int
+    global_position: int
+    time: float
 
-    @classmethod
-    def from_row(cls, row: Any) -> 'Message':
-        """Optimized method for returning a new Message instance when the
-        row Record is the result from calling a stored procedure or function.
+    def __hash__(self):
+        return hash(self.id)
 
-        This method assumes that the data will need to be de-serialized (json loaded)
-         before it can be used by the application.
-        """
-        return cls(
-            row.stream_name,
-            row.type,
-            jloads(row.data),
-            UUID(row.id),
-            jloads(row.metadata) if row.metadata else {},
-            row.position,
-            pendulum.instance(row.time, 'UTC'),
-        )
+    def __gt__(self, other: 'MessageData') -> bool:
+        return self.global_position > other.global_position
 
-    @classmethod
-    def from_sql_row(cls, row: Any) -> 'Message':
-        """Optimized method for returning a new Message instance when the
-        row Record is the result from performing a SQL query.
-        """
-        return cls(
-            row.stream_name,
-            row.type,
-            row.data,
-            row.id,
-            row.metadata or {},
-            row.position,
-            pendulum.instance(row.time, 'UTC'),
-        )
+    def __ge__(self, other: 'MessageData') -> bool:
+        return self.global_position >= other.global_position
 
-    def __gt__(self, other):
-        if isinstance(other, datetime) and self.time:
-            return self.time > other
-        elif not hasattr(other, 'position'):
-            raise NotImplementedError
-        return self.position > other.position
-
-    def __ge__(self, other):
-        if isinstance(other, datetime) and self.time:
-            return self.time >= other
-        elif not hasattr(other, 'position'):
-            raise NotImplementedError
-        return self.position >= other.position
-
-    def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            raise NotImplementedError
-        return self.stream == other.stream \
+    def __eq__(self, other: 'MessageData') -> bool:
+        return self.stream_name == other.stream_name \
             and self.type == other.type \
             and self.data == other.data \
-            and self.metadata == other.metadata \
-            and self.time == other.time
+            and self.metadata == other.metadata

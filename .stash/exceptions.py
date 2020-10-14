@@ -5,3 +5,7 @@
 #   python-eventide, 2020
 #   LiveViewTech
 # <<
+
+
+class EventideError:
+    """Library base exception class."""

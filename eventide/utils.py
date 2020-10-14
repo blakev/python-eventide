@@ -6,35 +6,28 @@
 #   LiveViewTech
 # <<
 
-import dataclasses
-from typing import Type, TypeVar
+from typing import Any, Callable, Dict, Optional
 
-T = TypeVar('T')
+import orjson
+
+__all__ = [
+    'jdumps',
+    'jloads',
+]
+
+# yapf: disable
+ORJSON_OPTIONS = (
+    orjson.OPT_SORT_KEYS |
+    orjson.OPT_NAIVE_UTC |
+    orjson.OPT_PASSTHROUGH_DATACLASS |
+    orjson.OPT_UTC_Z
+)
+# yapf: enable
 
 
-def dataclass_slots(cls: Type[T]) -> Type[T]:
-    """Converts a dataclass into a tightly defined class by
-    removing the generic __dict__ and replacing it with __slots__.
+def jdumps(value: Any, default: Optional[Callable] = None) -> str:
+    return orjson.dumps(value, default=default, option=ORJSON_OPTIONS).decode()
 
-    This is beneficial for tiny classes that get created rapidly.
-    """
 
-    if '__slots__' in cls.__dict__:
-        raise TypeError(f'{cls.__name__} already has __slots__')
-    # create a copy of the class dictionary
-    cls_dict = dict(cls.__dict__)
-    # extract the fields
-    fields = tuple(f.name for f in dataclasses.fields(cls))
-    # create a __slots__
-    cls_dict['__slots__'] = fields
-    # remove each attribute, referenced in _MARKER
-    for f in fields:
-        cls_dict.pop(f, None)
-    # remove the __dict__ itself
-    cls_dict.pop('__dict__', None)
-    # create a new class
-    qualname = getattr(cls, '__qualname__', None)
-    cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
-    if qualname is not None:  # pragma: no cover
-        cls.__qualname__ = qualname
-    return cls
+def jloads(value: str) -> Dict:
+    return orjson.loads(value)
