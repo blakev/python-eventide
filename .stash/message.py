@@ -7,10 +7,11 @@
 # <<
 
 from uuid import UUID
+from logging import getLogger
 from datetime import datetime
 from functools import total_ordering
 from dataclasses import field, dataclass, is_dataclass
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar, Optional
 
 import pendulum
 from pendulum import DateTime
@@ -96,4 +97,3 @@ class Message:
             and self.data == other.data \
             and self.metadata == other.metadata \
             and self.time == other.time
-

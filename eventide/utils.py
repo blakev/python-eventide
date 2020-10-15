@@ -6,7 +6,12 @@
 #   LiveViewTech
 # <<
 
-from typing import Any, Callable, Dict, Optional
+from typing import (
+    Any,
+    Dict,
+    Callable,
+    Optional,
+)
 
 import orjson
 

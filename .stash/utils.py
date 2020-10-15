@@ -7,6 +7,7 @@
 # <<
 
 import dataclasses
+from logging import getLogger
 from typing import Type, TypeVar
 
 T = TypeVar('T')

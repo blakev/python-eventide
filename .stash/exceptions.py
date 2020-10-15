@@ -6,6 +6,8 @@
 #   LiveViewTech
 # <<
 
+from logging import getLogger
+
 
 class EventideError:
     """Library base exception class."""

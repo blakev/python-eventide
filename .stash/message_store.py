@@ -8,6 +8,7 @@
 
 from uuid import UUID
 from hashlib import md5
+from logging import getLogger
 from typing import (
     Set,
     Dict,

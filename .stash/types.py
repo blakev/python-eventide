@@ -7,6 +7,7 @@
 # <<
 
 from asyncio import AbstractEventLoop
+from logging import getLogger
 from typing import (
     Dict,
     List,

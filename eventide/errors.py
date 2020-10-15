@@ -6,8 +6,6 @@
 #   LiveViewTech
 # <<
 
-from logging import getLogger
 
-
-class Projection:
-    pass
+class EventideError(Exception):
+    """Base exception class."""

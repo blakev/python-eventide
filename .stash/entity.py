@@ -6,6 +6,8 @@
 #   LiveViewTech
 # <<
 
+from logging import getLogger
+
 
 class Entity:
     pass

@@ -13,8 +13,8 @@ from typing import Optional
 from omegaconf import DictConfig
 
 from eventide.types import Loop
-from eventide.message_store import MessageStore
 from eventide.handler import Handler
+from eventide.message_store import MessageStore
 
 
 class Eventide:

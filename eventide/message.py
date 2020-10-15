@@ -7,12 +7,11 @@
 # <<
 
 from uuid import UUID, uuid4
-from dataclasses import dataclass, field, asdict
 from functools import total_ordering
-from typing import Dict, Optional, List
+from dataclasses import field, asdict, dataclass
+from typing import Dict, List, Optional
 
 from eventide._types import JSON
-from eventide.utils import jdumps
 
 
 @dataclass(frozen=False, repr=True)
@@ -117,17 +116,14 @@ class Message:
 class MessageData:
     """MessageData is the raw, low-level storage representation of a message."""
 
-    id: UUID
     type: str
-    data: JSON
-    metadata: Metadata
     stream_name: str
-    position: int
-    global_position: int
-    time: float
-
-    def __hash__(self):
-        return hash(self.id)
+    data: JSON = field(default_factory=dict)
+    metadata: JSON = field(default_factory=dict)
+    id: UUID = field(default_factory=uuid4)
+    position: int = field(default=-1)
+    global_position: int = field(default=-1)
+    time: float = field(default=-1.0)
 
     def __gt__(self, other: 'MessageData') -> bool:
         return self.global_position > other.global_position
@@ -140,3 +136,29 @@ class MessageData:
             and self.type == other.type \
             and self.data == other.data \
             and self.metadata == other.metadata
+
+    @property
+    def category(self) -> str:
+        return self.stream_name.split('-')[0]
+
+    @property
+    def is_category(self) -> bool:
+        return '-' not in self.stream_name
+
+    @property
+    def stream_id(self) -> Optional[str]:
+        if '-' not in self.stream_name:
+            return None
+        return self.stream_name.split('-', 1)[1]
+
+    @property
+    def cardinal_id(self) -> Optional[str]:
+        if '-' not in self.stream_name:
+            return None
+        return self.stream_name.split('-', 1)[1].split('+')[0]
+
+    @property
+    def command(self) -> Optional[str]:
+        if ':' not in self.category:
+            return None
+        return self.category.split(':', 1)[1].split('-')[0]
