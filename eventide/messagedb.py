@@ -6,7 +6,9 @@
 #   LiveViewTech
 # <<
 
+import math
 import asyncio
+from operator import attrgetter
 from asyncio import Queue
 from hashlib import md5
 from logging import getLogger
@@ -17,21 +19,21 @@ from typing import (
     Tuple,
     Callable,
     Optional,
-    AsyncIterable,
+    AsyncIterable, List,
 )
 
 import asyncpg
 from asyncpg import Record
 from asyncpg.pool import Pool
 from toolz.functoolz import curry
-from toolz.itertoolz import partition_all
+from toolz.itertoolz import partition_all, groupby
 from asyncpg.connection import Connection
 from asyncpg.exceptions import RaiseError, PostgresError
 
 from eventide.utils import jdumps, jloads
 from eventide._types import Loop, JSON, JSONFlatTypes
 from eventide.errors import EventideError
-from eventide.message import MessageData, PreMessageData
+from eventide.message import Message, MessageData, SerializedMessage
 
 
 class MessageDBError(EventideError):
@@ -145,46 +147,54 @@ class MessageDB:
         async with self.connection('acquire_lock') as con:
             return (await con.fetchrow(Procs.acquire_lock, stream))[0]
 
-    def _prepare_pre_msg(self, message: PreMessageData) -> Tuple[str, str, str, JSON, JSON]:
-        return (
-            str(message.id),
-            message.stream_name,
-            message.type,
-            self._jdumps(message.data),
-            self._jdumps(message.metadata),
-        )
-
     async def write_message(
         self,
-        message: PreMessageData,
+        stream_name: str,
+        message: Message,
         expected_version: Optional[int] = None,
     ) -> int:
         """Write a generic message to the database."""
-        args = self._prepare_pre_msg(message) + (expected_version,)
+        args = message.serialize(stream_name, expected_version)
         async with self.connection('write_message') as conn:
             return (await conn.fetchrow(Procs.write_message, *args))[0]
 
-    async def queue_message(self, message: PreMessageData) -> None:
-        await self._pending.put(message)
+    async def queue_message(
+        self,
+        stream_name: str,
+        message: Message,
+    ) -> None:
+        await self._pending.put(message.serialize(stream_name))
 
     async def write_pending_messages(self) -> int:
         """Flushes the buffer, if there are items in it, to the message store.
-        Because these transactions are performed in bulk, and possibly to multiple
-        streams, the return value is the new global position."""
+
+        The return value is the number of records that were successfully synced.
+        """
         if self._pending.empty():
-            return await self.get_last_global_index()
+            return 0
+
+        total = 0
+        split_n = math.ceil(self._pending.maxsize / 4.0)
+
+        # ensure the queue is empty before returning
         while not self._pending.empty():
-            pending = []
+            pending: List[SerializedMessage] = []
+
+            # flush the entire queue
             while not self._pending.empty():
                 pending.append(await self._pending.get())
-            for pair in enumerate(partition_all(50, pending)):
-                idx, bundle = pair
-                async with self.connection('write_pending_messages-%d' % idx) as con:
-                    async with con.transaction():
-                        for msg in bundle:
-                            args = self._prepare_pre_msg(msg) + (None,)
-                            await con.fetchrow(Procs.write_message, *args)
-        return await self.get_last_global_index()
+
+            # divide all the pending into like-typed instances
+            partitioned = groupby(attrgetter('type'), pending)
+            for _, items in partitioned.items():
+                for idx, bundle in partition_all(split_n, items):
+                    async with self.connection('write_pending_messages-%d' % idx) as c:
+                        async with c.transaction():
+                            for msg in bundle:
+                                await c.fetchrow(Procs.write_message, *msg)
+                                total += 1
+        # ~~ no more in pending queue
+        return total
 
     async def get_version(self) -> Tuple[int, ...]:
         async with self.connection('get_version') as conn:
@@ -197,9 +207,10 @@ class MessageDB:
         res = await self.get_last_message()
         return res['global_position'] if res else 0
 
-    async def get_last_message(self) -> Optional[Record]:
+    async def get_last_message(self) -> Optional[MessageData]:
         async with self.connection('get_last_message') as conn:
-            return await conn.fetchrow(Procs.sql_last_message)
+            res = await conn.fetchrow(Procs.sql_last_message)
+            return MessageData.from_record(res)
 
     async def get_stream_version(
         self,

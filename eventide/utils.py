@@ -18,6 +18,7 @@ import orjson
 __all__ = [
     'jdumps',
     'jloads',
+    'dense_dict',
 ]
 
 # yapf: disable
@@ -36,3 +37,12 @@ def jdumps(value: Any, default: Optional[Callable] = None) -> str:
 
 def jloads(value: str) -> Dict:
     return orjson.loads(value)
+
+
+def dense_dict(dictionary: Dict) -> Dict:
+    """Return a dictionary ignoring keys with None values, recursively."""
+    return {
+        k: dense_dict(v) if isinstance(v, dict) else v
+        for k, v in dictionary.items()
+        if v is not None
+    }
