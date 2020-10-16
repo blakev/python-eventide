@@ -9,13 +9,26 @@
 from uuid import UUID, uuid4
 from operator import attrgetter
 from functools import total_ordering
-from dataclasses import field, asdict, dataclass, fields, make_dataclass, _process_class
-from typing import Dict, List, Optional, Callable, NamedTuple, Mapping, Type
+from dataclasses import (
+    field,
+    asdict,
+    fields,
+    dataclass,
+    _process_class,
+    make_dataclass,
+)
+from typing import (
+    Dict,
+    List,
+    Type,
+    Mapping,
+    Callable,
+    Optional,
+    NamedTuple,
+)
 
-from toolz.functoolz import curry
-
-from eventide._types import JSON
 from eventide.utils import jdumps, jloads, dense_dict
+from eventide._types import JSON
 
 f_blank = field(default=None, repr=False)
 
@@ -281,6 +294,7 @@ def messagecls(
 
     All @messagecls decorated classes behave like normal dataclasses.
     """
+
     def wrap(cls):
         # turn the wrapped class into a dataclass
         kls = dataclass(
@@ -316,6 +330,7 @@ def messagecls(
                 Message,
             ),
         )
+
     # ensure this class definition follows basic guidelines
     if not hasattr(msg_meta, '__dataclass_fields__'):
         raise ValueError('custom message metadata class must be a @dataclass')
@@ -333,5 +348,3 @@ def messagecls(
 
 
 message_cls = messagecls  # alias
-
-

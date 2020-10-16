@@ -8,30 +8,31 @@
 
 import math
 import asyncio
-from operator import attrgetter
 from asyncio import Queue
 from hashlib import md5
 from logging import getLogger
+from operator import attrgetter
 from contextlib import asynccontextmanager
 from typing import (
     Any,
     Dict,
+    List,
     Tuple,
     Callable,
     Optional,
-    AsyncIterable, List,
+    AsyncIterable,
 )
 
 import asyncpg
 from asyncpg import Record
 from asyncpg.pool import Pool
 from toolz.functoolz import curry
-from toolz.itertoolz import partition_all, groupby
+from toolz.itertoolz import groupby, partition_all
 from asyncpg.connection import Connection
 from asyncpg.exceptions import RaiseError, PostgresError
 
 from eventide.utils import jdumps, jloads
-from eventide._types import Loop, JSON, JSONFlatTypes
+from eventide._types import JSONFlatTypes, Loop
 from eventide.errors import EventideError
 from eventide.message import Message, MessageData, SerializedMessage
 
