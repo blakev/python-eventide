@@ -226,6 +226,8 @@ class Message:
             return False
         attrs = self.attributes()
         for k, v in other.attributes().items():
+            if k in ('id', 'metadata'):
+                continue
             if attrs.get(k, not v) != v:
                 return False
         return True
