@@ -7,6 +7,7 @@
 # <<
 
 from uuid import UUID, uuid4
+from datetime import datetime
 from operator import attrgetter
 from functools import total_ordering
 from dataclasses import (
@@ -27,14 +28,15 @@ from typing import (
     NamedTuple,
 )
 
+from pydantic import BaseModel, Field
+
 from eventide.utils import jdumps, jloads, dense_dict
 from eventide._types import JSON
 
-f_blank = field(default=None, repr=False)
+f_blank = Field(default=None)
 
 
-@dataclass(frozen=False, repr=False)
-class Metadata:
+class Metadata(BaseModel):
     """A message's metadata object contains information about the stream where the
     message resides, the previous message in a series of messages that make up a
     messaging workflow, the originating process to which the message belongs, as well
@@ -43,6 +45,10 @@ class Metadata:
     Message metadata is data about messaging machinery, like message schema version,
     source stream, positions, provenance, reply address, and the like.
     """
+    class Config:
+        extra = 'allow'
+        orm_mode = True
+
     # yapf: disable
     stream_name:                        Optional[str] = f_blank
     position:                           Optional[int] = f_blank
@@ -68,6 +74,12 @@ class Metadata:
             setattr(self, attr, repr_fields)
         o = ', '.join('%s=%s' % (k, getattr(self, k)) for k in getattr(self, attr))
         return '%s(%s)' % (self.__class__.__name__, o)
+
+    def to_dict(self) -> Dict:
+        return self.dict(skip_defaults=True, exclude_unset=True)
+
+    def to_json(self) -> str:
+        return jdumps(self.to_dict())
 
     @property
     def identifier(self) -> str:
@@ -129,6 +141,7 @@ class MessageData:
         rec = dict(record)
         rec['data'] = jloads(rec.get('data', '{}'))
         rec['metadata'] = jloads(rec.get('metadata', '{}'))
+        rec['time'] = rec.get('time', datetime.utcnow()).timestamp()
         return cls(**rec)
 
     def __gt__(self, other: 'MessageData') -> bool:
@@ -191,8 +204,8 @@ class Message:
     class on other structures that are persisted to the database.
     """
 
-    id: UUID = field(init=False, default_factory=uuid4)
-    metadata: Metadata = field(init=False, default_factory=Metadata)
+    id: UUID            = Field(default_factory=uuid4, alias='_id_')
+    metadata: Metadata  = Field(default_factory=Metadata, alias='_metadata_')
 
     @classmethod
     def from_messagedata(cls, data: 'MessageData', strict: bool = False) -> 'Message':

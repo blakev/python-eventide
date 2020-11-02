@@ -7,13 +7,12 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-aiopg = "^1.0.0"
-toolz = "^0.11.1"
-omegaconf = "^2.0.2"
-pendulum = "^2.1.2"
 uvloop = "^0.14.0"
 orjson = "^3.4.0"
 asyncpg = "^0.21.0"
+cytoolz = "^0.11.0"
+marshmallow = "^3.8.0"
+pydantic = "^1.6.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1.1"

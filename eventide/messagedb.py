@@ -24,10 +24,9 @@ from typing import (
 )
 
 import asyncpg
-from asyncpg import Record
 from asyncpg.pool import Pool
-from toolz.functoolz import curry
-from toolz.itertoolz import groupby, partition_all
+from cytoolz.functoolz import curry
+from cytoolz.itertoolz import groupby, partition_all
 from asyncpg.connection import Connection
 from asyncpg.exceptions import RaiseError, PostgresError
 
@@ -227,7 +226,7 @@ class MessageDB:
         position: int = 0,
         batch_size: int = 1000,
         sql_condition: Optional[str] = None,
-    ) -> AsyncIterable[Record]:
+    ) -> AsyncIterable[MessageData]:
         """Get messages from a stream.
 
         Retrieve messages from a single stream, optionally specifying the starting
@@ -242,15 +241,18 @@ class MessageDB:
         async with self.connection('get_stream_messages') as con:
             async with con.transaction():
                 async for res in con.cursor(Procs.get_stream_messages, *args):
-                    yield res
+                    yield MessageData.from_record(res)
 
     async def get_last_stream_message(
         self,
         stream: str,
-    ) -> Optional[Record]:
+    ) -> Optional[MessageData]:
         """Get the last message from a stream."""
         async with self.connection('get_stream_last_message') as con:
-            return (await con.fetchrow(Procs.get_last_stream_message, stream))[0]
+            res = await con.fetchrow(Procs.get_last_stream_message, stream)
+            if not res or len(res) == 0:
+                return None
+            return MessageData.from_record(res[0])
 
     async def get_category_messages(
         self,
@@ -261,7 +263,7 @@ class MessageDB:
         consumer_group_member: Optional[int] = None,
         consumer_group_size: Optional[int] = None,
         sql_condition: Optional[str] = None,
-    ) -> AsyncIterable[Record]:
+    ) -> AsyncIterable[MessageData]:
         """Get messages from a category."""
         args = (
             category,
@@ -275,4 +277,4 @@ class MessageDB:
         async with self.connection('get_category_messages') as con:
             async with con.transaction():
                 async for res in con.cursor(Procs.get_category_messages, *args):
-                    yield res
+                    yield MessageData.from_record(res)

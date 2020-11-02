@@ -10,7 +10,7 @@ from typing import (
     Any,
     Dict,
     Callable,
-    Optional,
+    Optional, Tuple,
 )
 
 import orjson
@@ -39,10 +39,10 @@ def jloads(value: str) -> Dict:
     return orjson.loads(value)
 
 
-def dense_dict(dictionary: Dict) -> Dict:
+def dense_dict(dictionary: Dict, removables: Tuple = (None,)) -> Dict:
     """Return a dictionary ignoring keys with None values, recursively."""
     return {
         k: dense_dict(v) if isinstance(v, dict) else v
         for k, v in dictionary.items()
-        if v is not None
+        if v not in removables
     }
